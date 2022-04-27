@@ -22,7 +22,7 @@ show global  status  like 'Com_______';  -- 查看自数据库上次启动至今
 show status like 'Innodb_rows_%’;       -- 查看针对Innodb引擎的统计结果
 ```
 
-![参数含义](<.gitbook/assets/image (1).png>)
+![参数含义](<.gitbook/assets/image (1) (1).png>)
 
 ## 定位低效率执行SQL
 
@@ -70,4 +70,105 @@ show processlist;
 explain select * from user where uid = 1;
 ```
 
+![](<.gitbook/assets/image (5).png>)
+
+**Explain分析执行计划-Explain 之 id**
+
+id 字段是 select查询的序列号，是一组数字，表示的是查询中执行select子句或者是操作表的顺序。id 情况有三种:
+
+1、id 相同表示加载表的顺序是从上到下；
+
+2、id 不同id值越大，优先级越高，越先被执行；
+
+3、id 有相同，也有不同，同时存在。id相同的可以认为是一组，从上往下顺序执行；在所有的组中，id的值越大，优先级越高，越先执行。
+
+**Explain分析执行计划-Explain 之 select\_type**
+
+表示 SELECT 的类型，常见的取值，如下表所示：
+
+![](<.gitbook/assets/image (4).png>)
+
+**Explain分析执行计划-Explain 之 type**
+
+type 显示的是访问类型，是较为重要的一个指标，可取值为：
+
 ![](.gitbook/assets/image.png)
+
+<mark style="color:red;">结果值从最好到最坏以此是：system > const > eq\_ref > ref > range > index > ALL</mark>
+
+**Explain分析执行计划-其他指标字段**
+
+**Explain 之 table**
+
+显示这一步所访问数据库中表名称有时不是真实的表名字，可能是简称
+
+**E**_**xplain 之 rows**_
+
+扫描行的数量。
+
+**Explain 之 key**
+
+_possible\_keys :_ 显示可能应用在这张表的索引， 一个或多个。
+
+_key_ ： 实际使用的索引， 如果为NULL， 则没有使用索引。
+
+_key\_len_ : 表示索引中使用的字节数， 该值为索引字段最大可能长度，并非实际使用长度，在不损失精确性的前提下， 长度越短越好 。
+
+![](<.gitbook/assets/image (1).png>)
+
+**Explain之 extra**
+
+![](<.gitbook/assets/image (2).png>)
+
+## show profile分析SQL
+
+Mysql从5.0.37版本开始增加了对 show profiles 和 show profile 语句的支持。show profiles 能够在做SQL优化时帮助我们了解时间都耗费到哪里去了。
+
+通过 have\_profiling 参数，能够看到当前MySQL是否支持profile：
+
+```plsql
+select @@have_profiling; 
+set profiling=1; -- 开启profiling 开关； s
+```
+
+执行完一些sql命令之后，再执行show profiles 指令， 来查看SQL语句执行的耗时：
+
+```plsql
+show profiles;
+```
+
+通过show profile for query query\_id 语句可以查看到该SQL执行过程中每个线程的状态和消耗的时间：
+
+```plsql
+show profile for query 8;
+```
+
+在获取到最消耗时间的线程状态后，MySQL支持进一步选择all、cpu、block io 、context switch、page faults等明细类型类查看MySQL在使用什么资源上耗费了过高的时间。例如，选择查看CPU的耗费时间 ：
+
+```plsql
+show profile cpu for query 133; 
+```
+
+## trace分析优化器执行计划
+
+MySQL5.6提供了对SQL的跟踪trace, 通过trace文件能够进一步了解为什么优化器选择A计划, 而不是选择B计划
+
+![](<.gitbook/assets/image (3).png>)
+
+打开trace ， 设置格式为 JSON，并设置trace最大能够使用的内存大小，避免解析过程中因为默认内存过小而不能够完整展示。
+
+```plsql
+SET optimizer_trace="enabled=on",end_markers_in_json=on; 
+set optimizer_trace_max_mem_size=1000000;
+```
+
+执行自定义SQL语句，最后， 检查information\_schema.optimizer\_trace就可以知道MySQL是如何执行SQL的 ：
+
+```plsql
+select * from information_schema.optimizer_trace\G; -- 不能再navicat运行，需要在终端上运行
+```
+
+## 使用索引优化
+
+索引是数据库优化最常用也是最重要的手段之一, 通过索引通常可以帮助用户解决大多数的MySQL的性能优化问题。
+
