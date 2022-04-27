@@ -1,11 +1,4 @@
 # Table of contents
 
-## MySQL常用语法
-
-* [Page 1](README.md)
-
-## Group 1
-
-***
-
-* [Page 2](page-2.md)
+* [mysql的优化](README.md)
+  * [Page 1](mysql-de-you-hua/page-1.md)
